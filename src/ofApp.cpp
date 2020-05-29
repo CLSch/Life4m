@@ -1,23 +1,61 @@
 #include "ofApp.h"
 
+/* Code used from OF example: 02_simpleVertexDisplacement
+This program models a lifeform that grows and shrinks in space but gets scared when the user gets to close. */
+
 void ofApp::setup(){
+
+    shader.load("shadersES2/shader");
     ofEnableSmoothing();
     ofBackground(0);
     pointCounter = 0;
     startTime = ofGetElapsedTimeMillis();
     dragTime = ofGetElapsedTimeMillis();
+    colorTime = ofGetElapsedTimeMillis();
     entered = false;
     start = true;
     rStarter = 0;
     ofNoFill();
+    colorGrad = 0.5;
+    leftDir = true;
 }
 
 void ofApp::draw(){
-    life4m.draw();
-    if (entered)
+    if (entered) {
         delPoints();
-    else
+    }
+    else {
+        // make sure color shifts gradially
+        if (colorTime + 100 < ofGetElapsedTimeMillis()) {
+            if (leftDir && colorGrad < 0.95) {
+                colorGrad += 0.05;
+            }
+            else if (leftDir && colorGrad >= 0.95) {
+                colorGrad -= 0.05;
+                leftDir = false;
+            }
+            else if (!leftDir && colorGrad > 0.05) {
+                colorGrad -= 0.05;
+            }
+            else if (!leftDir && colorGrad <= 0.05) {
+                colorGrad += 0.05;
+                leftDir = true;
+            }
+            colorTime = ofGetElapsedTimeMillis();
+        }
+            
+        ofColor colorLeft = ofColor::magenta;
+        ofColor colorRight = ofColor::cyan;
+        ofColor colorMix = colorLeft.getLerped(colorRight, colorGrad);
+        ofSetColor(colorMix);
+
+        shader.begin();
+        shader.setUniform1f("time", ofGetElapsedTimef());
+        shader.end();
+        
         pointManager();
+    }
+    life4m.draw();
 }
 
 // delete points from the map (shrink)
@@ -84,10 +122,12 @@ void ofApp::mouseEntered(int x, int y){
     entered = true;
     start = false;
     ofFill();
+    ofSetColor(255, 255, 255);
 }
 
 // return to normal when mouse leaves window
 void ofApp::mouseExited(int x, int y){
     entered = false;
     ofNoFill();
+    ofSetColor(ofColor::magenta.getLerped(ofColor::cyan, colorGrad));
 }
