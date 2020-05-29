@@ -1,10 +1,5 @@
 #include "ofApp.h"
 
-int pointCounter, rStarter;
-int dragTime;
-bool entered, start;
-
-//--------------------------------------------------------------
 void ofApp::setup(){
     ofEnableSmoothing();
     ofBackground(0);
@@ -14,69 +9,66 @@ void ofApp::setup(){
     entered = false;
     start = true;
     rStarter = 0;
-}
-
-//--------------------------------------------------------------
-void ofApp::update(){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::draw(){
     ofNoFill();
-    //life4m.triangleMesh;
-    
+}
+
+void ofApp::draw(){
     life4m.draw();
     if (entered)
         delPoints();
     else
-        addPoints();
-    //ofDrawBitmapString("'r' to reset", ofPoint(10,20));
+        pointManager();
 }
 
-//--------------------------------------------------------------
-void ofApp::keyPressed(int key){
-    if(key == 'r'){
-        life4m.reset();
-    }
-    if(key == 's'){
-        std::cout << "pointC: " << pointCounter << endl;
-    }
-    if(key == 't'){
-        life4m.removePointAtIndex(pointCounter);
-        pointCounter--;
-        life4m.triangulate();
-    }
-}
-
+// delete points from the map (shrink)
 void ofApp::delPoints() {
+    // while mouse is in window delete a point every 10 millisecs
     if (pointCounter > 0 && (dragTime + 10 < ofGetElapsedTimeMillis())) {
-        std::cout << "entered pc: " << pointCounter << endl;
         life4m.removePointAtIndex(pointCounter);
         pointCounter--;
         dragTime = ofGetElapsedTimeMillis();
     }
+    // reset map if there are no points left
     else if (pointCounter == 0) {
         life4m.reset();
     }
 }
 
-//
+// add points to the map (grow)
 void ofApp::addPoints(){
-    if ((start && startTime + 200 < ofGetElapsedTimeMillis()) || (!start && pointCounter >= rStarter && startTime + 200 < ofGetElapsedTimef()) || (!start && pointCounter < rStarter && startTime + 1000 < ofGetElapsedTimeMillis())) {
+    // add a random point in 3d space to the map
+    int tx = ofRandom(100, ofGetWindowWidth() - 100);
+    int ty = ofRandom(100, ofGetWindowHeight() - 100);
+    int tz = ofRandom(10, 100);
+    life4m.addPoint(ofPoint(tx,ty,tz));
+    life4m.triangulate();
+    pointCounter++;
+}
+
+// decide wether a point gets added or deleted or to stay idle (growing)
+void ofApp::pointManager(){
+    // grow every 200 - 400 millisecs, unless program is still 'cautious' from last visit of the mouse
+    // in that case grow every 1000 millisecs
+    int growTimer = ofRandom(2,5) * 100;
+    
+    // rStarter decides how long the program will stay 'cautious'
+    if ((start && startTime + growTimer < ofGetElapsedTimeMillis()) || (!start && pointCounter >= rStarter && startTime + growTimer < ofGetElapsedTimeMillis()) || (!start && pointCounter < rStarter && startTime + 1000 < ofGetElapsedTimeMillis())) {
+        
+        // when the lifeform is still small (< 15 points), it has 60% chance of growing, 20% of staying idle, %20 of shrinking
+        // if the lifeform is > 15, it has 60% chance of staying idle, 20% of growing and %20 of shrinking
         int ran = ofRandom(10);
-        std::cout << "inadd ran " << ran << endl;
-        // 0 is niks doen
-        if ((pointCounter < 15 && ran > 3)  || (ran > 6 && pointCounter < 100)) {
-            int tx = ofRandom(100, ofGetWindowWidth() - 100);
-            int ty = ofRandom(100, ofGetWindowHeight() - 100);
-            int tz = ofRandom(10, 100);
-            life4m.addPoint(ofPoint(tx,ty,tz));
-            //points[pointCounter] = {tx, ty};
-            life4m.triangulate();
-            pointCounter++;
+        
+        // create first triangle if map is empty
+        while (pointCounter < 3) {
+            addPoints();
+            ran = 0;
         }
-        else if(pointCounter > 0 && ((pointCounter < 15  && ran > 1) || (ran < 7 && ran > 3 && pointCounter >= 15))) {
+        
+        // 0 is niks doen
+        if ((pointCounter < 15 && ran > 3)  || (ran > 7 && pointCounter < 100)) {
+            addPoints();
+        }
+        else if(pointCounter > 0 && ((pointCounter < 15  && ran > 1) || (ran < 8 && ran > 5 && pointCounter >= 15))) {
             life4m.removePointAtIndex(pointCounter);
             pointCounter--;
             life4m.triangulate();
@@ -85,51 +77,16 @@ void ofApp::addPoints(){
     }
 }
 
-//--------------------------------------------------------------
-void ofApp::keyReleased(int key){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y ){
-    
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseDragged(int x, int y, int button){
-}
-
-//--------------------------------------------------------------
-void ofApp::mousePressed(int x, int y, int button){
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseReleased(int x, int y, int button){
-}
-
-//--------------------------------------------------------------
+// be 'scared' when mouse enters the window
 void ofApp::mouseEntered(int x, int y){
     entered = true;
     start = false;
+    ofFill();
 }
 
-//--------------------------------------------------------------
+// return to normal when mouse leaves window
 void ofApp::mouseExited(int x, int y){
     entered = false;
-    rStarter = ofRandom(2,6);
-}
-
-//--------------------------------------------------------------
-void ofApp::windowResized(int w, int h){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::gotMessage(ofMessage msg){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){ 
-
+    rStarter = ofRandom(4,6);
+    ofNoFill();
 }
