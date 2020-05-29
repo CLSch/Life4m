@@ -32,6 +32,9 @@ void ofApp::delPoints() {
     else if (pointCounter == 0) {
         life4m.reset();
     }
+    
+    // let lifeform be 'cautious' for a few moves
+    rStarter = ofRandom(3,5) + pointCounter;
 }
 
 // add points to the map (grow)
@@ -47,15 +50,15 @@ void ofApp::addPoints(){
 
 // decide wether a point gets added or deleted or to stay idle (growing)
 void ofApp::pointManager(){
-    // grow every 200 - 400 millisecs, unless program is still 'cautious' from last visit of the mouse
+    // grow every 100 - 400 millisecs, unless lifeform is still 'cautious' from last visit of the mouse
     // in that case grow every 1000 millisecs
-    int growTimer = ofRandom(2,5) * 100;
+    int growTimer = ofRandom(1,5) * 100;
     
-    // rStarter decides how long the program will stay 'cautious'
+    // rStarter decides how long the lifeform will stay 'cautious'
     if ((start && startTime + growTimer < ofGetElapsedTimeMillis()) || (!start && pointCounter >= rStarter && startTime + growTimer < ofGetElapsedTimeMillis()) || (!start && pointCounter < rStarter && startTime + 1000 < ofGetElapsedTimeMillis())) {
         
-        // when the lifeform is still small (< 15 points), it has 60% chance of growing, 20% of staying idle, %20 of shrinking
-        // if the lifeform is > 15, it has 60% chance of staying idle, 20% of growing and %20 of shrinking
+        // when the lifeform is still small (< 12 points), it has 60% chance of growing, 20% of staying idle, %20 of shrinking
+        // if the lifeform is > 12, it has 60% chance of staying idle, 20% of growing and %20 of shrinking
         int ran = ofRandom(10);
         
         // create first triangle if map is empty
@@ -64,11 +67,10 @@ void ofApp::pointManager(){
             ran = 0;
         }
         
-        // 0 is niks doen
-        if ((pointCounter < 15 && ran > 3)  || (ran > 7 && pointCounter < 100)) {
+        if ((pointCounter < 12 && ran > 3)  || (ran > 7 && pointCounter < 100)) {
             addPoints();
         }
-        else if(pointCounter > 0 && ((pointCounter < 15  && ran > 1) || (ran < 8 && ran > 5 && pointCounter >= 15))) {
+        else if(pointCounter > 0 && ((pointCounter < 12  && ran > 1) || (ran < 8 && ran > 5 && pointCounter >= 12))) {
             life4m.removePointAtIndex(pointCounter);
             pointCounter--;
             life4m.triangulate();
@@ -87,6 +89,5 @@ void ofApp::mouseEntered(int x, int y){
 // return to normal when mouse leaves window
 void ofApp::mouseExited(int x, int y){
     entered = false;
-    rStarter = ofRandom(4,6);
     ofNoFill();
 }
